@@ -1,5 +1,9 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const prisma = new PrismaClient();
+
+const SECRET_KEY = process.env.JWT_SECRET || 'secret';
 
 const createUser = async (body) => {
   const { name, email, password } = body;
@@ -14,11 +18,13 @@ const createUser = async (body) => {
       throw new Error('Usuário já cadastrado')
     }
 
-    const user =  await prisma.user.create({ data: { name, password, email }});
-    if (!user) return { status: 'INVALID_VALUE', data: { message: 'Não foi possível cadastrar' } };
-    const data = { id: user.id, email: user.email, name: user.name };
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({ data: { name, email, password: hashedPassword } });
 
-    return { status: 'SUCCESSFUL', data: { ...data } };
+    if (!user) return { status: 'INVALID_VALUE', data: { message: 'Não foi possível cadastrar' } };
+    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, SECRET_KEY, { expiresIn: '1h' });
+
+    return { status: 'SUCCESSFUL', data: { token } };
   } catch (error) {
     return { status: 'INVALID_VALUE', data: { message: error.message } };
   }
@@ -32,12 +38,18 @@ const login = async (body) => {
 
   try {
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || user.password !== password) {
+    if (!user) {
       return { status: 'UNAUTHORIZED', data: { message: 'Usuário ou senha inválidos' } };
     }
-    const data = { id: user.id, email: user.email, name: user.name };
 
-    return { status: 'SUCCESSFUL', data: { ...data  } };
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return { status: 'UNAUTHORIZED', data: { message: 'Usuário ou senha inválidos' } };
+    }
+    
+    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, SECRET_KEY, { expiresIn: '1h' });
+
+    return { status: 'SUCCESSFUL', data: { token  } };
   } catch (error) {
     return { status: 'UNAUTHORIZED', data: { message: 'Usuário ou senha inválidos' } };
   }

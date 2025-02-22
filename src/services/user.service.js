@@ -14,9 +14,7 @@ const createUser = async (body) => {
 
   try {
     const isUser = await prisma.user.findUnique({ where: { email } });
-    if (isUser) {
-      throw new Error('Usuário já cadastrado')
-    }
+    if (isUser) return { status: 'INVALID_VALUE', data: { message: 'Usuário já cadastrado' } };
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({ data: { name, email, password: hashedPassword } });
@@ -26,7 +24,7 @@ const createUser = async (body) => {
 
     return { status: 'SUCCESSFUL', data: { token } };
   } catch (error) {
-    return { status: 'INVALID_VALUE', data: { message: error.message } };
+    return { status: 'SERVER_ERROR', data: { message: 'Erro ao cadastrar' } };
   }
 };
 
@@ -51,7 +49,7 @@ const login = async (body) => {
 
     return { status: 'SUCCESSFUL', data: { token  } };
   } catch (error) {
-    return { status: 'UNAUTHORIZED', data: { message: 'Usuário ou senha inválidos' } };
+    return { status: 'SERVER_ERROR', data: { message: 'Erro ao tentar logar' } };
   }
 
 }

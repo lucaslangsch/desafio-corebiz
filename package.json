@@ -15,7 +15,9 @@
     "prisma": "^6.4.1"
   },
   "dependencies": {
+    "@prisma/client": "^6.4.1",
     "@prisma/extension-accelerate": "^1.2.2",
+    "dotenv": "^16.4.7",
     "express": "^4.21.2"
   }
 }

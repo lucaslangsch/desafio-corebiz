@@ -27,7 +27,6 @@ const createTask = async (userId, body) => {
 
     return { status: 'SUCCESSFUL', data: task };
   } catch (error) {
-    console.log(error)
     return { status: 'SERVER_ERROR', data: { message: error.message } };
   }
 };

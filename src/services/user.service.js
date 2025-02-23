@@ -19,7 +19,6 @@ const createUser = async (body) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({ data: { name, email, password: hashedPassword } });
 
-    if (!user) return { status: 'INVALID_VALUE', data: { message: 'Não foi possível cadastrar' } };
     const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, SECRET_KEY, { expiresIn: '1h' });
 
     return { status: 'SUCCESSFUL', data: { token } };
